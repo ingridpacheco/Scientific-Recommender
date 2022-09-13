@@ -128,7 +128,7 @@ Loop o qual estaremos montando nosso DataSet:
 
 # Lista dos elementos a serem garimpados
 #lista_elementos = sopa.find_all('div', {'class': 'sc-1fp9csv-0 ifDzmR'})
-#print( len(lista_artigos) )
+print("Tamanho da lista: " + str(len(lista_artigos)))
 print(lista_artigos)
 
 ########################################################################################
@@ -137,9 +137,7 @@ print(lista_artigos)
 
 # Site de onde vamos completar as informações dos artigos
 link = 'https://api.semanticscholar.org/graph/v1/paper/search?query='
-# print(lista_artigos[0])
 total_linhas = 0
-# paper = sch.paper(artigo['doi'] + "", timeout=8)
 
 # Listar os artigos para montar o dataSet complementando com as demais informações
 with open(nome_arquivo,'w') as f:
@@ -170,26 +168,15 @@ with open(nome_arquivo,'w') as f:
             return str_paperId,str_title,search_id
         return None,None,None
 
-    # print(artigo)
-    
-    # retorno = requests.get( link + filtro, headers = cabecalho)
-
     url = 'http://export.arxiv.org/api/query?search_query=' + filtro + '&start=0&max_results=1'
-    # print(url)
     data = urllib.request.urlopen(url)
-    # print(data.read())
     data = data.read().decode('utf-8')
     d = feedparser.parse(data)
-    # print(d)
     
     if len(d['entries']) > 0:
         alvo = d['entries'][0]['id']
-
-        # link = data['feed']
-        # print(alvo)
         alvo = alvo.replace('arxiv', 'export.arxiv')
         alvo = alvo[:-2]
-        # print(alvo)
 
         resposta = requests.get(alvo)
 
@@ -207,28 +194,6 @@ with open(nome_arquivo,'w') as f:
             str_paperId,str_title,search_id = getFromSemanticScholar(filtro)
     else:
         str_paperId,str_title,search_id = getFromSemanticScholar(filtro)
-    
-    # sp_artigo = BeautifulSoup(retorno.text, 'html.parser')
-    # artigo_json = json.loads(sp_artigo.text)
-
-    # print(artigo_json)
-
-    # if len(artigo_json["data"]) > 0:
-
-      # str_paperId = artigo_json["data"][0]["paperId"]
-      # str_title = artigo_json["data"][0]["title"]
-
-      # Área de Debug: #
-    # print( '-'*80)
-    # print( f'filtro = {filtro}')
-    # print( f'Artigo: {artigo}')
-    # print( f'Retorno do link com query: {sp_artigo}')
-    # print( f' => paperId: {str_paperId}' )
-    # print( f' => title: {str_title}' )
-    #print( f' => paperId: {artigo_json["data"][0]["paperId"]}' )
-    #print( f' => title: {artigo_json["data"][0]["title"]}' )
-    # print( '-'*80)
-    # Área de Debug: #
 
     # Complementando as informações do DataSet
 
@@ -249,48 +214,23 @@ with open(nome_arquivo,'w') as f:
       fields_of_study_list = retorno['fieldsOfStudy']
 
       print( f'RETORNO: {retorno}' )
-      # print( authors_list )
-      #   #autores = for autor in retorno['authors']: print ( autor['name'] )
       authors = ''
-      for author in authors_list: authors = authors + author['name'] + ', '
-      authors = authors[0:len(authors)-2]
+      for author in authors_list: authors = authors + author['name'] + ','
+      authors = authors[0:len(authors)-1]
 
       topics = ''
       for topic in topics_list:
         topic = topic if type(topic) is not dict else topic['topic']
         topics = topics + topic + ','
-      topics = topics[0:len(topics)-2]
+      topics = topics[0:len(topics)-1]
 
       fields_of_study = ''
       if fields_of_study_list is not None:
         for field in fields_of_study_list: fields_of_study = fields_of_study + field + ','
-        fields_of_study = fields_of_study[0:len(fields_of_study)-2]
-
-      # print( '*'*30)
-      # print( '** CAMPOS DO DATASET')
-      # print( '*'*30)
-      # print('Title: ', title)
-      # print('DOI: ', doi)
-      # print('Authors List: ', authors_list)
-      # print('Autores: ', authors)
-      # print('Abstract: ', abstract)
-      # print('Publisher: ', publisher)
-      # print('Year: ', year)
-      # print('Topics: ', topics)
-      # print('Fields of Study:', fields_of_study)
-      # print( '*'*30)
+        fields_of_study = fields_of_study[0:len(fields_of_study)-1]
 
       article_data = [title,paperId,doi,authors,abstract,publisher,year,topics,fields_of_study]
       writer.writerow(article_data)
-
-      # if doi is not None:
-      #   print( '-'*30)
-      #   article_url = "https://doi.org/api/handles/" + doi
-      #   r = requests.get(url = article_url)
-      #   response = r.json()
-      #   print( json.dumps(response, indent=4, sort_keys=True) )
-      #   print( response['values'])
-      #   print( '-'*30)
 
       total_linhas += 1
 

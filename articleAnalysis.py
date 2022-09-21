@@ -9,6 +9,7 @@ from bokeh.palettes import magma, Category10
 from bokeh.plotting import figure, show            # paleta de cores
 from bokeh.models import ColumnDataSource
 from bokeh.transform import factor_cmap
+from bokeh.layouts import gridplot
 import plotly.express as px
 import seaborn as sns
 
@@ -17,7 +18,9 @@ import seaborn as sns
 # Qtdade de artigos publicados para cada conf OK
 # Top 5 dos 6 maiores tópicos - geral e por ano OK
 # Análise histórica de tópicos para cada conf OK
+# Análise histórica de publicações para cada conf OK
 # Análise histórica das confs para cada tópico OK
+# Análise histórica das publicações para cada tópico OK
 
 # Próximos:
     # Clusterização por tema - total vs qtdade na conf
@@ -30,6 +33,8 @@ def create_dicts(article_data):
     topics_qty = {}
     articles_by_publisher = {}
     publisher_qty = {}
+    topics_qty_year = {}
+    publisher_qty_year = {}
 
     for i,article in enumerate(article_data.values):
         print('qty: ' + str(i))
@@ -73,6 +78,15 @@ def create_dicts(article_data):
                 else:
                     topics_qty[topic] += 1
 
+                if topic not in topics_qty_year:
+                    topics_qty_year[topic] = {}
+                    topics_qty_year[topic][year] = 1
+                else:
+                    if year not in topics_qty_year[topic]:
+                        topics_qty_year[topic][year] = 1
+                    else:
+                        topics_qty_year[topic][year] += 1
+
                 if publisher not in articles_by_publisher:
                     articles_by_publisher[publisher] = {}
                     articles_by_publisher[publisher][year] = {}
@@ -93,8 +107,16 @@ def create_dicts(article_data):
                     publisher_qty[publisher][topic] = 1
                 else:
                     publisher_qty[publisher][topic] += 1
+
+                if publisher not in publisher_qty_year:
+                    publisher_qty_year[publisher] = {}
+                    publisher_qty_year[publisher][year] = 1
+                elif year not in publisher_qty_year[publisher]:
+                    publisher_qty_year[publisher][year] = 1
+                else:
+                    publisher_qty_year[publisher][year] += 1
     
-    return topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty
+    return topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year
 
 def analyse_topics(topics_publisher, biggest_topics, topics_year):
     for topic in biggest_topics:
@@ -169,7 +191,24 @@ def analyse_topics(topics_publisher, biggest_topics, topics_year):
                     hue="Publisher", style="Publisher", size="Qty")
         plt.show()
 
-def analyse_most_published_events(publisher_qty):
+def analyse_biggest_topics(biggest_topics, topics_qty_year):
+    colors = ['orange','green','blue','red','purple','black']
+    p1 = figure(title="Quantidade de artigos por tópico por ano")
+    p2 = figure(title="Quantidade total de artigos por tópico")
+    for i,topic in enumerate(biggest_topics):
+        total_years = []
+        topic_qty = dict(sorted(topics_qty_year[topic[0]].items()))
+        for year in topic_qty.keys():
+            if len(total_years) == 0:
+                total_years.append(topic_qty[year])
+            else:
+                total_years.append(topic_qty[year] + total_years[len(total_years) - 1])
+        p1.line(list(topic_qty.keys()), list(topic_qty.values()), legend_label=f"{topic[0]}", line_color=colors[i], line_dash=(4, 4),line_width=2)
+        p2.line(list(topic_qty.keys()), list(total_years), legend_label=f"{topic[0]}", line_color=colors[i], line_dash=(4, 4),line_width=2)
+    p2.legend.location = "bottom_right"
+    show(gridplot([p1, p2], ncols=2, width=400, height=400))
+
+def analyse_most_published_events(publisher_qty,publisher_qty_year):
     publisher_qty_df = pd.DataFrame.from_dict(publisher_qty)
     publisher_qty_df = publisher_qty_df.replace(np.nan, 0)
     print(publisher_qty_df)
@@ -204,6 +243,21 @@ def analyse_most_published_events(publisher_qty):
     p.xaxis.major_label_orientation = np.math.pi/4   # legend orientation by angle pi/x
     p.legend.location = "top_center"
     show(p)
+
+    colors = ['orange','green','blue','red','purple','black','pink','yellow','brown','LightSeaGreen']
+    p1 = figure(title="Quantidade de artigos por evento por ano")
+    p2 = figure(title="Quantidade total de artigos por evento")
+    for i,pub in enumerate(x_data):
+        total_years = []
+        pub_qty = dict(sorted(publisher_qty_year[pub].items()))
+        for year in pub_qty.keys():
+            if len(total_years) == 0:
+                total_years.append(pub_qty[year])
+            else:
+                total_years.append(pub_qty[year] + total_years[len(total_years) - 1])
+        p1.line(list(pub_qty.keys()), list(pub_qty.values()), legend_label=f"{pub}", line_color=colors[i], line_dash=(4, 4),line_width=2)
+        p2.line(list(pub_qty.keys()), list(total_years), legend_label=f"{pub}", line_color=colors[i], line_dash=(4, 4),line_width=2)
+    show(gridplot([p1, p2], ncols=2, width=1000, height=400))
 
     return publisher_qty_df
 
@@ -254,8 +308,9 @@ def analyse_publishers(publisher_qty_df,topics_qty,articles_by_publisher):
 
 def main(article_data):
 
-    topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty = create_dicts(article_data)
+    topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year = create_dicts(article_data)
 
+    # print(topics_publisher['EXPERIMENT'])
     # Sort topics by total quantity published
     topics_qty = dict(sorted(topics_qty.items(), key=lambda item: item[1], reverse=True))
     # Get 6 biggest topics
@@ -264,8 +319,9 @@ def main(article_data):
     print(biggest_topics)
 
     analyse_topics(topics_publisher,biggest_topics,topics_year)
+    analyse_biggest_topics(biggest_topics,topics_qty_year)
 
-    publisher_qty_df = analyse_most_published_events(publisher_qty)
+    publisher_qty_df = analyse_most_published_events(publisher_qty,publisher_qty_year)
 
     analyse_publishers(publisher_qty_df,topics_qty,articles_by_publisher)
 

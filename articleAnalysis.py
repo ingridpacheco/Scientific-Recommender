@@ -12,6 +12,8 @@ from bokeh.transform import factor_cmap
 from bokeh.layouts import gridplot
 import plotly.express as px
 import seaborn as sns
+from sklearn.cluster import KMeans
+from yellowbrick.cluster import KElbowVisualizer
 
 # Top 6 tópicos mais publicados OK
 # Para cada conf, qual o tópico que mais aparece OK
@@ -125,9 +127,10 @@ def analyse_topics(topics_publisher, biggest_topics, topics_year):
         topic_name_df = pd.DataFrame.from_dict(topic_name)
         topic_name_df = topic_name_df.replace(np.nan, 0)
         print(topic_name_df)
+        # Get data from 2022
         topic_name_2022 = topic_name_df.tail(1).values[0]
         print(topic_name_2022)
-        topic_name_df = topic_name_df.agg(['sum'])
+        topic_name_df = topic_name_df.agg(['sum']) # Get total quantity for each conference in this topic
         print(topic_name_df)
 
         x_data = list(topic_name_df.columns)
@@ -136,8 +139,7 @@ def analyse_topics(topics_publisher, biggest_topics, topics_year):
         print('------')
         print(y_data)
 
-        d = {'Publisher': x_data, 'Total': y_data, '2022 Qty': topic_name_2022}
-        comparison_dataframe = pd.DataFrame(data=d)
+        comparison_dataframe = pd.DataFrame(data={'Publisher': x_data, 'Total': y_data, '2022 Qty': topic_name_2022})
         print(comparison_dataframe)
 
         data = ColumnDataSource(data=dict(x_data=x_data, y_data=y_data))  
@@ -208,15 +210,7 @@ def analyse_biggest_topics(biggest_topics, topics_qty_year):
     p2.legend.location = "bottom_right"
     show(gridplot([p1, p2], ncols=2, width=400, height=400))
 
-def analyse_most_published_events(publisher_qty,publisher_qty_year):
-    publisher_qty_df = pd.DataFrame.from_dict(publisher_qty)
-    publisher_qty_df = publisher_qty_df.replace(np.nan, 0)
-    print(publisher_qty_df)
-
-    # Get events with biggest quantity of published articles
-    publisher_qty_df_total = publisher_qty_df.agg(['sum'])
-    print(publisher_qty_df_total)
-
+def analyse_most_published_events(publisher_qty_year, publisher_qty_df_total):
     x_data = list(publisher_qty_df_total.columns)
     y_data = list(publisher_qty_df_total.values[0])
     print(y_data)
@@ -263,6 +257,7 @@ def analyse_most_published_events(publisher_qty,publisher_qty_year):
 
 def analyse_publishers(publisher_qty_df,topics_qty,articles_by_publisher):
     for event in publisher_qty_df.columns:
+        # Sort events from quantity of published articles (most to least)
         sorted_df = publisher_qty_df.sort_values(by=event, ascending=False)
         sorted_df = sorted_df[event].head(5)
         print(sorted_df)
@@ -306,11 +301,75 @@ def analyse_publishers(publisher_qty_df,topics_qty,articles_by_publisher):
                     hue="Topic", style="Topic", size="Qty")
         plt.show()
 
+# Find quantity of clusters
+def calculate_wcss(data):
+    wcss = []
+    for i in range(1, 11):
+        kmeans = KMeans(n_clusters=i)
+        kmeans.fit(X=data)
+        wcss.append(kmeans.inertia_)
+        #
+    return wcss
+
+# Perform clustering on each topic
+def find_clusters(biggest_topics, publisher_qty, publisher_qty_df_total):
+
+    # For each topic find the cluster
+    for i,topic in enumerate(biggest_topics):
+        topic = topic[0]
+        print(topic)
+        topic_events_qty = []
+
+        # Find the quantity of articles published with this topic in this event
+        for event in publisher_qty.keys():
+            if topic in publisher_qty[event]:
+                topic_events_qty.append(publisher_qty[event][topic])
+            else:
+                topic_events_qty.append(0)
+
+        # print(topic_events_qty)
+        # Create Dataframe with quantity of articles from topic in event and total quantity of articles in event
+        event_topic = pd.DataFrame(data={'Event Topic': topic_events_qty, 'Event': publisher_qty_df_total.values[0]}, index=publisher_qty_df_total.columns)
+
+        # Find quantity of clusters
+        wcss = calculate_wcss(event_topic)
+
+        fig = plt.figure(figsize=(6,4))
+        plt.plot(range(1, 11), wcss, 'r', lw=2.0)
+        plt.title('Método de Elbow')
+        plt.xlabel('Número de clusters')
+        plt.ylabel('WCSS')
+        plt.grid()
+        plt.show()
+
+        # Initialize the clusters
+        #sns.set()
+        kmeans = KMeans(n_clusters = 3, init ='k-means++', max_iter=300, n_init = 10, random_state=0)
+        #
+
+        # Get values from Dataframe to plot clusters
+        event_topic = event_topic.values
+        
+        y_kmeans = kmeans.fit_predict(event_topic)        # Adjust the clusters
+        # figure
+        cluster = plt.figure(figsize=(15,10))
+        #
+        plt.scatter(event_topic[y_kmeans == 0, 0], event_topic[y_kmeans == 0, 1], s = 100, c = 'red', label = 'Cluster 1')
+        plt.scatter(event_topic[y_kmeans == 1, 0], event_topic[y_kmeans == 1, 1], s = 100, c = 'blue', label = 'Cluster 2')
+        plt.scatter(event_topic[y_kmeans == 2, 0], event_topic[y_kmeans == 2, 1], s = 100, c = 'green', label = 'Cluster 3')
+        #
+        plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c = 'black', label = 'Centroides')
+        plt.title('Clusters de consumidores')
+        plt.xlabel(f'Quantidade do tópico {topic}')
+        plt.ylabel('Quantidade total')
+        plt.legend()
+        plt.show()
+        cluster.savefig(f'Imagens/cluster-{topic}.png')
+
 def main(article_data):
 
     topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year = create_dicts(article_data)
 
-    # print(topics_publisher['EXPERIMENT'])
     # Sort topics by total quantity published
     topics_qty = dict(sorted(topics_qty.items(), key=lambda item: item[1], reverse=True))
     # Get 6 biggest topics
@@ -318,10 +377,23 @@ def main(article_data):
     print('Biggest Topics: ')
     print(biggest_topics)
 
+    publisher_qty_df = pd.DataFrame.from_dict(publisher_qty)
+    
+    # Replace NaN values to 0
+    publisher_qty_df = publisher_qty_df.replace(np.nan, 0)
+    # print(publisher_qty_df)
+
+    # Get events with biggest quantity of published articles
+    publisher_qty_df_total = publisher_qty_df.agg(['sum'])
+    # print(publisher_qty_df_total)
+
+    #Perform clustering on each topic
+    find_clusters(biggest_topics, publisher_qty, publisher_qty_df_total)
+
     analyse_topics(topics_publisher,biggest_topics,topics_year)
     analyse_biggest_topics(biggest_topics,topics_qty_year)
 
-    publisher_qty_df = analyse_most_published_events(publisher_qty,publisher_qty_year)
+    analyse_most_published_events(publisher_qty_year, publisher_qty_df_total)
 
     analyse_publishers(publisher_qty_df,topics_qty,articles_by_publisher)
 

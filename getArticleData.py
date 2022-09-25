@@ -216,7 +216,7 @@ with open(nome_arquivo,'w',newline='',encoding="utf-8") as f:
             for author in article.find_all('span',{'itemprop':'author'}):
               authors = authors + author.find('span',{'itemprop':'name'}).get('title') + ','
             authors = authors[0:len(authors)-1]
-            article_data = ['','',authors,'',conf,'',genre]
+            article_data = ['','',authors,conf,'',genre]
           else:
             print('paperId: ' + paperId)
             article_data = get_complementary_data(qty_article, paperId)

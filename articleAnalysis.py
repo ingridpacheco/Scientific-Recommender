@@ -23,20 +23,17 @@ from yellowbrick.cluster import KElbowVisualizer
 # Análise histórica de publicações para cada conf OK
 # Análise histórica das confs para cada tópico OK
 # Análise histórica das publicações para cada tópico OK
-
-# Próximos:
-    # Clusterização por tema - total vs qtdade na conf
-    # Previsão p/ o proximo ano?
-    # Fazer analise de pais dos eventos? Temos essa info?
+# Clusterização por tema OK
 
 def create_dicts(article_data):
-    topics_publisher = {}
-    topics_year = {}
+    topics_publisher_year = {}
+    topics_year_publisher = {}
     topics_qty = {}
     articles_by_publisher = {}
     publisher_qty = {}
     topics_qty_year = {}
     publisher_qty_year = {}
+    year_topics = {}
 
     for i,article in enumerate(article_data.values):
         print('qty: ' + str(i))
@@ -49,31 +46,40 @@ def create_dicts(article_data):
         if not pd.isna(publisher) and not pd.isna(topics):
             for topic in topics.split(','):
                 topic = topic.upper()
-                if topic not in topics_publisher:
-                    topics_publisher[topic] = {}
-                    topics_publisher[topic][publisher] = {}
-                    topics_publisher[topic][publisher][year] = 1
-                elif publisher in topics_publisher[topic]:
-                    if year not in topics_publisher[topic][publisher]:
-                        topics_publisher[topic][publisher][year] = 1
-                    else:
-                        topics_publisher[topic][publisher][year] += 1
+
+                if year not in year_topics:
+                    year_topics[year] = {}
+                    year_topics[year][topic] = 1
+                elif topic in year_topics[year]:
+                    year_topics[year][topic] += 1
                 else:
-                    topics_publisher[topic][publisher] = {}
-                    topics_publisher[topic][publisher][year] = 1
+                    year_topics[year][topic] = 1
+
+                if topic not in topics_publisher_year:
+                    topics_publisher_year[topic] = {}
+                    topics_publisher_year[topic][publisher] = {}
+                    topics_publisher_year[topic][publisher][year] = 1
+                elif publisher in topics_publisher_year[topic]:
+                    if year not in topics_publisher_year[topic][publisher]:
+                        topics_publisher_year[topic][publisher][year] = 1
+                    else:
+                        topics_publisher_year[topic][publisher][year] += 1
+                else:
+                    topics_publisher_year[topic][publisher] = {}
+                    topics_publisher_year[topic][publisher][year] = 1
                 
-                if topic not in topics_year:
-                    topics_year[topic] = {}
-                    topics_year[topic][year] = {}
-                    topics_year[topic][year][publisher] = 1
-                elif year in topics_year[topic]:
-                    if publisher not in topics_year[topic][year]:
-                        topics_year[topic][year][publisher] = 1
+                if topic not in topics_year_publisher:
+                    topics_year_publisher[topic] = {}
+                    topics_year_publisher[topic][year] = {}
+                    topics_year_publisher[topic][year][publisher] = 1
+                elif year in topics_year_publisher[topic]:
+                    if publisher not in topics_year_publisher[topic][year]:
+                        topics_year_publisher[topic][year][publisher] = 1
                     else:
-                        topics_year[topic][year][publisher] += 1
+                        topics_year_publisher[topic][year][publisher] += 1
                 else:
-                    topics_year[topic][year] = {}
-                    topics_year[topic][year][publisher] = 1
+                    topics_year_publisher[topic][year] = {}
+                    topics_year_publisher[topic][year][publisher] = 1
 
                 if topic not in topics_qty:
                     topics_qty[topic] = 1
@@ -118,18 +124,23 @@ def create_dicts(article_data):
                 else:
                     publisher_qty_year[publisher][year] += 1
     
-    return topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year
+    return topics_publisher_year, topics_year_publisher, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year, year_topics
 
-def analyse_topics(topics_publisher, biggest_topics, topics_year):
+def analyse_topics(topics_publisher_year, biggest_topics, topics_year_publisher):
     for topic in biggest_topics:
-        topic_name = topics_publisher[topic[0]]
+        topic_name = topics_publisher_year[topic[0]]
         print(topic_name)
         topic_name_df = pd.DataFrame.from_dict(topic_name)
         topic_name_df = topic_name_df.replace(np.nan, 0)
         print(topic_name_df)
-        # Get data from 2022
-        topic_name_2022 = topic_name_df.tail(1).values[0]
-        print(topic_name_2022)
+        # Get data from last year
+
+        topic_name_last_year = topic_name_df.sort_index().tail(1)
+        last_year = topic_name_df.sort_index().tail(1).index.values[0]
+        topic_name_last_year = topic_name_last_year.values[0]
+
+        # topic_name_2022 = topic_name_df.sort_index().tail(1).values[0]
+        print(topic_name_last_year)
         topic_name_df = topic_name_df.agg(['sum']) # Get total quantity for each conference in this topic
         print(topic_name_df)
 
@@ -139,7 +150,7 @@ def analyse_topics(topics_publisher, biggest_topics, topics_year):
         print('------')
         print(y_data)
 
-        comparison_dataframe = pd.DataFrame(data={'Publisher': x_data, 'Total': y_data, '2022 Qty': topic_name_2022})
+        comparison_dataframe = pd.DataFrame(data={'Publisher': x_data, 'Total': y_data, f'{last_year} Qty': topic_name_last_year})
         print(comparison_dataframe)
 
         data = ColumnDataSource(data=dict(x_data=x_data, y_data=y_data))  
@@ -167,21 +178,21 @@ def analyse_topics(topics_publisher, biggest_topics, topics_year):
         #
         fig = px.bar(comparison_dataframe,
                     x=comparison_dataframe['Publisher'], 
-                    y=comparison_dataframe['2022 Qty'],
+                    y=comparison_dataframe[f'{last_year} Qty'],
                     hover_data=['Total'], 
                     color='Total',
                     labels={'Publisher':'Publishers'}, #height=400
                     )
-        fig.update_layout(title_text=f'Artigos publicados no tópico {topic[0]} em 2022')
+        fig.update_layout(title_text=f'Artigos publicados no tópico {topic[0]} em {last_year}')
         fig.update_xaxes(tickangle=-45) 
         fig.show()
 
         topics_data = []
-        for year in topics_year[topic[0]].keys():
+        for year in topics_year_publisher[topic[0]].keys():
             cur_data = []
-            for publisher in topics_publisher[topic[0]].keys():
-                if publisher in topics_year[topic[0]][year]:
-                    cur_data = [year,publisher,topics_year[topic[0]][year][publisher]]
+            for publisher in topics_publisher_year[topic[0]].keys():
+                if publisher in topics_year_publisher[topic[0]][year]:
+                    cur_data = [year,publisher,topics_year_publisher[topic[0]][year][publisher]]
                     topics_data.append(cur_data)
 
         print(topics_data)
@@ -366,16 +377,29 @@ def find_clusters(biggest_topics, publisher_qty, publisher_qty_df_total):
         plt.show()
         cluster.savefig(f'Imagens/cluster-{topic}.png')
 
+def find_biggest6_per_year(year_topics):
+    biggest_topics_year = {}
+
+    for year in year_topics.keys():
+        sorted_year_topics = dict(sorted(year_topics[year].items(), key=lambda item: item[1], reverse=True))
+        biggest_topics_year[year] = list(sorted_year_topics.items())[0:6]
+
+    print(biggest_topics_year)
+    return biggest_topics_year
+
 def main(article_data):
 
-    topics_publisher, topics_year, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year = create_dicts(article_data)
+    topics_publisher_year, topics_year_publisher, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year, year_topics = create_dicts(article_data)
 
     # Sort topics by total quantity published
     topics_qty = dict(sorted(topics_qty.items(), key=lambda item: item[1], reverse=True))
+
     # Get 6 biggest topics
     biggest_topics = list(topics_qty.items())[0:6]
-    print('Biggest Topics: ')
-    print(biggest_topics)
+    # print('Biggest Topics: ')
+    # print(biggest_topics)
+
+    find_biggest6_per_year(year_topics)
 
     publisher_qty_df = pd.DataFrame.from_dict(publisher_qty)
     
@@ -390,7 +414,7 @@ def main(article_data):
     #Perform clustering on each topic
     find_clusters(biggest_topics, publisher_qty, publisher_qty_df_total)
 
-    analyse_topics(topics_publisher,biggest_topics,topics_year)
+    analyse_topics(topics_publisher_year,biggest_topics,topics_year_publisher)
     analyse_biggest_topics(biggest_topics,topics_qty_year)
 
     analyse_most_published_events(publisher_qty_year, publisher_qty_df_total)

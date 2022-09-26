@@ -1,11 +1,9 @@
-from cmath import nan
-from numpy import NaN
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-from bokeh.palettes import magma, Category10  
+from bokeh.palettes import Category10  
 from bokeh.plotting import figure, show            # paleta de cores
 from bokeh.models import ColumnDataSource
 from bokeh.transform import factor_cmap
@@ -13,17 +11,6 @@ from bokeh.layouts import gridplot
 import plotly.express as px
 import seaborn as sns
 from sklearn.cluster import KMeans
-from yellowbrick.cluster import KElbowVisualizer
-
-# Top 6 tópicos mais publicados OK
-# Para cada conf, qual o tópico que mais aparece OK
-# Qtdade de artigos publicados para cada conf OK
-# Top 5 dos 6 maiores tópicos - geral e por ano OK
-# Análise histórica de tópicos para cada conf OK
-# Análise histórica de publicações para cada conf OK
-# Análise histórica das confs para cada tópico OK
-# Análise histórica das publicações para cada tópico OK
-# Clusterização por tema OK
 
 def create_dicts(article_data):
     topics_publisher_year = {}

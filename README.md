@@ -2,7 +2,7 @@
 
 Projeto final da disciplina de Fundamentos de Ciência de Dados do mestrado do PPGI.
 
-Alunos: Ingrid Pacheco, Eduardo Prata
+Alunos: Ingrid Pacheco, Eduardo Prata e Renan Parreira
 
 Professores: Sérgio Serra e Jorge Zavatela
 

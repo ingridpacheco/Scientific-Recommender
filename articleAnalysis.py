@@ -30,6 +30,15 @@ def create_dicts(article_data):
         print(topics)
         publisher = article[4]
         year = article[7]
+        if not pd.isna(publisher):
+            if publisher not in publisher_qty_year:
+                    publisher_qty_year[publisher] = {}
+                    publisher_qty_year[publisher][year] = 1
+            elif year not in publisher_qty_year[publisher]:
+                    publisher_qty_year[publisher][year] = 1
+            else:
+                    publisher_qty_year[publisher][year] += 1
+
         if not pd.isna(publisher) and not pd.isna(topics):
             for topic in topics.split(','):
                 topic = topic.upper()
@@ -102,14 +111,6 @@ def create_dicts(article_data):
                     publisher_qty[publisher][topic] = 1
                 else:
                     publisher_qty[publisher][topic] += 1
-
-                if publisher not in publisher_qty_year:
-                    publisher_qty_year[publisher] = {}
-                    publisher_qty_year[publisher][year] = 1
-                elif year not in publisher_qty_year[publisher]:
-                    publisher_qty_year[publisher][year] = 1
-                else:
-                    publisher_qty_year[publisher][year] += 1
     
     return topics_publisher_year, topics_year_publisher, topics_qty, articles_by_publisher, publisher_qty, topics_qty_year, publisher_qty_year, year_topics
 
@@ -146,7 +147,7 @@ def analyse_topics(topics_publisher_year, biggest_topics, topics_year_publisher)
                 plot_width=1200,
                 plot_height=520, 
                 #toolbar_location=None, 
-                title=f"Artigos publicados no topico {topic[0]}"
+                title=f'Artigos publicados no topico {topic[0]}'
                 )  # cria figura
         p.vbar(x='x_data', 
             top='y_data', 
@@ -206,7 +207,7 @@ def analyse_biggest_topics(biggest_topics, topics_qty_year):
         p1.line(list(topic_qty.keys()), list(topic_qty.values()), legend_label=f"{topic[0]}", line_color=colors[i], line_dash=(4, 4),line_width=2)
         p2.line(list(topic_qty.keys()), list(total_years), legend_label=f"{topic[0]}", line_color=colors[i], line_dash=(4, 4),line_width=2)
     p2.legend.location = "bottom_right"
-    show(gridplot([p1, p2], ncols=2, width=400, height=400))
+    show(gridplot([p1, p2], ncols=2, width=600, height=400))
 
 def analyse_most_published_events(publisher_qty_year, publisher_qty_df_total):
     x_data = list(publisher_qty_df_total.columns)
@@ -233,7 +234,7 @@ def analyse_most_published_events(publisher_qty_year, publisher_qty_df_total):
         fill_color=factor_cmap('x_data', palette=Category10[10], factors=x_data)
         )
     p.xaxis.major_label_orientation = np.math.pi/4   # legend orientation by angle pi/x
-    p.legend.location = "top_center"
+    p.legend.location = "top_left"
     show(p)
 
     colors = ['orange','green','blue','red','purple','black','pink','yellow','brown','LightSeaGreen']
@@ -251,17 +252,16 @@ def analyse_most_published_events(publisher_qty_year, publisher_qty_df_total):
         p2.line(list(pub_qty.keys()), list(total_years), legend_label=f"{pub}", line_color=colors[i], line_dash=(4, 4),line_width=2)
     show(gridplot([p1, p2], ncols=2, width=1000, height=400))
 
-    return publisher_qty_df
-
 def analyse_publishers(publisher_qty_df,topics_qty,articles_by_publisher):
     for event in publisher_qty_df.columns:
         # Sort events from quantity of published articles (most to least)
         sorted_df = publisher_qty_df.sort_values(by=event, ascending=False)
-        sorted_df = sorted_df[event].head(5)
-        print(sorted_df)
+        sorted_df = sorted_df[event].head(6)
+        # print(sorted_df)
 
         total_topic = []
         big_qty_topic = sorted_df.index.to_list()
+        # print(topics_qty)
         for topic in big_qty_topic:
             total_topic.append(topics_qty[topic])
 
@@ -325,7 +325,6 @@ def find_clusters(biggest_topics, publisher_qty, publisher_qty_df_total):
             else:
                 topic_events_qty.append(0)
 
-        # print(topic_events_qty)
         # Create Dataframe with quantity of articles from topic in event and total quantity of articles in event
         event_topic = pd.DataFrame(data={'Event Topic': topic_events_qty, 'Event': publisher_qty_df_total.values[0]}, index=publisher_qty_df_total.columns)
 
@@ -388,17 +387,13 @@ def main(article_data):
 
     find_biggest6_per_year(year_topics)
 
-    publisher_qty_df = pd.DataFrame.from_dict(publisher_qty)
-    
-    # Replace NaN values to 0
-    publisher_qty_df = publisher_qty_df.replace(np.nan, 0)
-    # print(publisher_qty_df)
-
     # Get events with biggest quantity of published articles
-    publisher_qty_df_total = publisher_qty_df.agg(['sum'])
+    publisher_qty_year_df = pd.DataFrame.from_dict(publisher_qty_year).replace(np.nan, 0)
+    publisher_qty_df = pd.DataFrame.from_dict(publisher_qty).replace(np.nan, 0)
+    publisher_qty_df_total = publisher_qty_year_df.agg(['sum'])
     # print(publisher_qty_df_total)
 
-    #Perform clustering on each topic
+    # Perform clustering on each topic
     find_clusters(biggest_topics, publisher_qty, publisher_qty_df_total)
 
     analyse_topics(topics_publisher_year,biggest_topics,topics_year_publisher)

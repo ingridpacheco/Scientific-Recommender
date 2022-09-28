@@ -1,14 +1,16 @@
 # Scientific Recommender
 
+**Este projeto está licenciado nos termos da licença MIT.**
+
 Projeto final da disciplina de Fundamentos de Ciência de Dados do mestrado do PPGI.
 
-Alunos: Ingrid Pacheco, Eduardo Prata e Renan Parreira
+**Autores**: Ingrid Pacheco, Eduardo Prata e Renan Parreira
 
-Professores: Sérgio Serra e Jorge Zavatela
+**Professore**: Sérgio Serra e Jorge Zavatela
 
 ## Objetivo
 
-Criação de um sistema de recomendação de conferências e jornals. Entretanto, é necessária uma análise para entender o cenário atual das conferências em relação aos tópicos que mais são publicados e sua evolução histórica.
+Criação de um sistema de recomendação de conferências e jornals. Entretanto, é necessária uma análise para entender o cenário atual das conferências em relação aos tópicos que mais são publicados e sua evolução histórica. Este trabalho, portanto, se propõe a fazer uma análise histórica de tópicos publicados em 10 conferências entre os anos de 2018 e 2022, a fim de ter uma melhor visualização dos seus padrões para auxiliar na implementação futura do sistema de recomendação.
 
 ## Arquivos
 
@@ -60,3 +62,9 @@ O código funciona através de um Web Scraping no site do [DBLP](https://dblp.or
 ## Artigo
 
 O artigo pode se encontrar de forma [`online`](https://www.overleaf.com/8891746977wpkbvdfbzjdn) ou na pasta [Artigo](/Artigo/Scientific_Recommender.pdf).
+
+## Cite As
+
+Ingrid Pacheco, Eduardo Prata & Renan Parreira. (2022, September 27). ingridpacheco/Scientific-Recommender: Repository of Scientific Recommender. 
+
+** Scientific Recommender @ copyright, Ingrid Pacheco, Eduardo Prata e Renan Parreira, 2022**

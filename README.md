@@ -67,4 +67,4 @@ O artigo pode se encontrar de forma [`online`](https://www.overleaf.com/88917469
 
 Ingrid Pacheco, Eduardo Prata & Renan Parreira. (2022, September 27). ingridpacheco/Scientific-Recommender: Repository of Scientific Recommender. 
 
-** Scientific Recommender @ copyright, Ingrid Pacheco, Eduardo Prata e Renan Parreira, 2022**
+**Scientific Recommender @ copyright, Ingrid Pacheco, Eduardo Prata e Renan Parreira, 2022**

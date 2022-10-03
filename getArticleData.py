@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-
 # **MAI712** - Fundamentos em Ciência de Dados
 ___
 #### **Professores:** Sergio Serra e Jorge Zavaleta
 ___
-#### **Equipe:** Ingrid Pacheco, Eduardo Prata, Renan Parreira
+#### **Equipe:** Ingrid Pacheco, Eduardo Prata
 ___
 ### **OBJETIVO:**
 Script de criação de um dataset com os artigos publicados em alguns eventos para o projeto final da matéria MAI712
@@ -15,83 +14,66 @@ Script de criação de um dataset com os artigos publicados em alguns eventos pa
 
 #### **Imports e Bibliotecas**
 
-Aqui estaremos declarando as bibliotecas e módulos necessários para nosso script
+Aqui estaremos declarando as bibliotecas e módulos necessários para nosso script:
+
+* [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+* [prov](https://pypi.org/project/prov/)
+* [semanticScholar - versão 0.3.0](https://pypi.org/project/semanticscholar/)
+* [requests](https://pypi.org/project/requests/)
+* [IPython](https://ipython.org/install.html)
 """
 
 # Importar módulo de Requests e de Expressões Regulares
-from multiprocessing import AuthenticationError
-import requests, re, random, json
-# Import para tratamento do arquivo e da versão do sistema
-from os import system, name, remove
-from os.path import isfile
+import requests, random
+
 # Import do beautifulSoup para tratamento dos dados retornados da pagina Web
 from bs4 import BeautifulSoup
-from datetime import date
 import csv
 import time
 
-import urllib, urllib.request
+from semanticscholar import SemanticScholar
+sch = SemanticScholar(timeout=8)
 
-import semanticscholar as sch
 import datetime
 from prov.model import ProvDocument
 from prov.dot import prov_to_dot
+
 from IPython.display import Image
 
-def findArticle(title,cabecalho):
-  filtro = title.replace(' ','+')
-  link = 'https://api.semanticscholar.org/graph/v1/paper/search?query='
-  print('Não tem DOI')
-  retorno = requests.get( link + filtro, headers = cabecalho)
-  if retorno.status_code == 429:
-      time.sleep(300)
-      print('Esperando um pouco')
-      retorno = requests.get( link + filtro, headers = cabecalho)
-  sp_artigo = BeautifulSoup(retorno.text, 'html.parser')
-  artigo_json = json.loads(sp_artigo.text)
-  if len(artigo_json["data"]) > 0:
-    str_paperId = artigo_json["data"][0]["paperId"]
-    return str_paperId
-  return None
+d1 = ProvDocument()
+dagnts = {}
+dentities = {}
+dactivities = {}
 
-def get_complementary_data(qty_article, search_id):
+def get_properties(retorno):
+  keys = retorno.keys()
 
-  if qty_article % 99 == 0 and qty_article != 0:
-    print("Atingiu +99")
-    time.sleep(300)
-  retorno = sch.paper(search_id, timeout=8)
-
-  while retorno is None:
-    print("Deu erro")
-    time.sleep(300)
-    retorno = sch.paper(search_id, timeout=8)
-  
-  if 'paperId' in retorno:
+  if 'paperId' in keys:
     paperId = retorno['paperId']
   else:
     paperId = ''
   
-  if 'doi' in retorno:
-    doi = retorno['doi']
+  if 'DOI' in retorno['externalIds'].keys():
+    doi = retorno['externalIds']['DOI']
   else:
     doi = ''
 
-  if 'authors' in retorno:
+  if 'authors' in keys:
     authors_list = retorno['authors']
   else:
     authors_list = []
 
-  if 'venue' in retorno:
+  if 'venue' in keys:
     publisher = retorno['venue']
   else:
     publisher = ''
   
-  if 'topics' in retorno:
+  if 'topics' in keys:
     topics_list = retorno['topics']
   else:
     topics_list = []
 
-  if 'fieldsOfStudy' in retorno:
+  if 'fieldsOfStudy' in keys:
     fields_of_study_list = retorno['fieldsOfStudy']
   else:
     fields_of_study_list = []
@@ -112,6 +94,32 @@ def get_complementary_data(qty_article, search_id):
     fields_of_study = fields_of_study[0:len(fields_of_study)-1]
 
   article_data = [paperId,doi,authors,publisher,topics,fields_of_study]
+
+  return article_data
+
+def find_article(title):
+  print('Não tem DOI')
+  articles = sch.search_paper(title)
+  if len(articles) > 0:
+    print(articles[0])
+    article_data = get_properties(articles[0])
+    return article_data
+  return None
+
+def get_complementary_data(qty_article, search_id):
+
+  if qty_article % 99 == 0 and qty_article != 0:
+    print("Atingiu +99")
+    time.sleep(300)
+  retorno = sch.get_paper(search_id)
+
+  while retorno is None:
+    print("Deu erro")
+    time.sleep(300)
+    retorno = sch.get_paper(search_id)
+  
+  article_data = get_properties(retorno)
+  
   return article_data
 
 def get_doi_data(doi_url,cabecalho):
@@ -136,8 +144,7 @@ def get_doi_data(doi_url,cabecalho):
 
     return authors,keywords
 
-
-def main(nome_arquivo,d1,ds):
+def main(nome_arquivo,d1,dagnts,dentities,dactivities):
   """#### **Primeiro Etapa:** Declaração das variáveis necessárias para nosso WebScraping
   """
 
@@ -156,16 +163,16 @@ def main(nome_arquivo,d1,ds):
   cabecalho = {'user-agent': ua}
   header = ['title', 'paperId', 'doi', 'authors', 'publisher', 'topics', 'fields_of_study','year']
   qty_article = 0
-  conferences = ["SOSP - ACM Symposium on Operating Systems Principles"]
-  # "OSDI - Operating Systems Design and Implementation",
-  # "NDSS - Network and Distributed System Security Symposium",
-  # "MobiHoc - Mobile Ad Hoc Networking and Computing",
-  # "SIGCOMM - ACM SIGCOMM Conference",
-  # "SenSys - Conference On Embedded Networked Sensor Systems",
-  # "MOBICOM - Mobile Computing and Networking",
-  # "CIDR - Conference on Innovative Data Systems Research",
-  # "USENIX Security Symposium",
-  # "EUROCRYPT - Theory and Application of Cryptographic Techniques"]
+  conferences = ["SOSP - ACM Symposium on Operating Systems Principles",
+  "OSDI - Operating Systems Design and Implementation",
+  "NDSS - Network and Distributed System Security Symposium",
+  "MobiHoc - Mobile Ad Hoc Networking and Computing",
+  "SIGCOMM - ACM SIGCOMM Conference",
+  "SenSys - Conference On Embedded Networked Sensor Systems",
+  "MOBICOM - Mobile Computing and Networking",
+  "CIDR - Conference on Innovative Data Systems Research",
+  "USENIX Security Symposium",
+  "EUROCRYPT - Theory and Application of Cryptographic Techniques"]
 
   """#### **Segunda Etapa:** Request no alvo e `html.parser` e filtra penas _tags_ analisadas como importantes
   """
@@ -182,11 +189,19 @@ def main(nome_arquivo,d1,ds):
     for conf in conferences:
       conf = conf.split('-')[0]
       print('Conf: ' + conf)
+      conf_parts = conf.split(' ')
+      if conf_parts[len(conf_parts) - 1] == '':
+        conf_parts = conf_parts[:-1]
+      conf_string = '-'.join(conf_parts)
+      print(conf_string)
       search_conf = "search?q=" + conf
       alvo = "https://dblp.org/" + search_conf
-      cs = d1.entity(f'dblp:{search_conf}')
-      d1.activity('ufrj:pegar-conferencias')
-      d1.used(ds, cs)
+      dentities[f'et-lista-conferencias-{conf_string}'] = d1.entity(f'dblp:lista-{conf_string}', {'prov:label': f'Lista das conferências que fazem match com dblp:{search_conf}', 'prov:type': 'foaf:Document'})
+      dactivities[f'et-busca-{conf_string}'] = d1.activity(f'dblp:{search_conf}')
+      d1.used(dactivities[f'et-busca-{conf_string}'], dentities['et-top10'])
+      d1.wasGeneratedBy(dentities[f'et-lista-conferencias-{conf_string}'], dactivities[f'et-busca-{conf_string}'])
+      d1.wasAssociatedWith(dactivities[f'et-busca-{conf_string}'], dagnts["ag-gad-ipynb"])
+
       resposta = requests.get(alvo, headers = cabecalho)
 
       # Formatando o retorno
@@ -198,8 +213,16 @@ def main(nome_arquivo,d1,ds):
 
       print('Href: ' + venue.get('href'))
       venue_href = venue.get('href')
+      venue_href_sufix = venue_href.split('https://dblp.org/')[1]
       resposta = requests.get(venue_href, headers = cabecalho)
       sopa = BeautifulSoup(resposta.text, 'html.parser')
+
+      dentities[f'et-lista-edicoes-{conf_string}'] = d1.entity(f'dblp:lista-edicoes-{conf_string}', {'prov:label': f'Lista das edições da conferência {conf}', 'prov:type': 'foaf:Document'})
+      dactivities[f'et-edicoes-{conf_string}'] = d1.activity(f'dblp:{venue_href_sufix}')
+      d1.used(dactivities[f'et-edicoes-{conf_string}'], dentities[f'et-lista-conferencias-{conf_string}'])
+      d1.wasGeneratedBy(dentities[f'et-lista-edicoes-{conf_string}'], dactivities[f'et-edicoes-{conf_string}'])
+      d1.wasAssociatedWith(dactivities[f'et-edicoes-{conf_string}'], dagnts["ag-gad-ipynb"])
+
       for conf_edition in sopa.find_all('ul', {'class':'publ-list'}):
         conf_title = conf_edition.find('span',{'itemprop':'name'}).get_text().lower()
 
@@ -214,7 +237,17 @@ def main(nome_arquivo,d1,ds):
         if int(published_year) < 2018:
           break
         content = conf_edition.find('a',{'class':'toc-link'}).get('href')
+        content_sufix = content.split('https://dblp.org/')[1]
         print(content)
+
+        dentities[f'et-lista-artigos-{conf_string}-{published_year}'] = d1.entity(f'dblp:lista-artigos-{conf_string}-{published_year}', {'prov:label': f'Lista das artigos publicados na conferência {conf} no ano de {published_year}', 'prov:type': 'foaf:Document'})
+        dactivities[f'et-artigos-{conf_string}-{published_year}'] = d1.activity(f'dblp:{content_sufix}')
+        d1.used(dactivities[f'et-artigos-{conf_string}-{published_year}'], dentities[f'et-lista-edicoes-{conf_string}'])
+        d1.wasGeneratedBy(dentities[f'et-lista-artigos-{conf_string}-{published_year}'], dactivities[f'et-artigos-{conf_string}-{published_year}'])
+        d1.wasAssociatedWith(dactivities[f'et-artigos-{conf_string}-{published_year}'], dagnts["ag-gad-ipynb"])
+
+        d1.wasDerivedFrom(dentities['et-dataset'], dentities[f'et-lista-artigos-{conf_string}-{published_year}'])
+
         resposta = requests.get(content, headers = cabecalho)
         sopa = BeautifulSoup(resposta.text, 'html.parser')
         for article in sopa.find_all('li', {'class':'entry inproceedings'}):
@@ -236,18 +269,22 @@ def main(nome_arquivo,d1,ds):
           doi = ''
           article_data = []
           if 'https://doi.org/' not in doi_url:
-            paperId = findArticle(title,cabecalho)
-            if paperId is None:
+            article_data = find_article(title)
+            if article_data is None or article_data[0] == '':
               print('paperId is None')
               authors = ''
               for author in article.find_all('span',{'itemprop':'author'}):
                 authors = authors + author.find('span',{'itemprop':'name'}).get('title') + ','
               authors = authors[0:len(authors)-1]
-              article_data = ['','',authors,conf,'',genre]
+              # [paperId,doi,authors,publisher,topics,fields_of_study]
+              if article_data is None:
+                article_data = ['','',authors,conf,'',genre]
+              else:
+                article_data = [article_data[0],article_data[1],authors,conf,article_data[4],genre]
             else:
-              print('paperId: ' + paperId)
-              article_data = get_complementary_data(qty_article, paperId)
               print('articledata1: ', article_data)
+              paperId = article_data[0]
+              print('paperId: ' + paperId)
               doi = article_data[1]
               print('doi: ', doi)
 
@@ -272,13 +309,12 @@ def main(nome_arquivo,d1,ds):
               article_data[5] = keywords
             elif article_data[5] != '' and keywords != '':
               article_data[5] = article_data[5] + ', ' + keywords
-            # [title,paperId,doi,authors,publisher,topics,fields_of_study,year]
             if article_data[6] == '':
               article_data[6] = genre
             elif genre.lower() not in article_data[6].lower():
               article_data[6] = article_data[6] + ', ' + genre
           else:
-            article_data = [title,'',doi,authors,conf,keywords,genre,year]
+            article_data = [title,'',doi,authors,conf,keywords.lower(),genre.lower(),year]
 
           writer.writerow(article_data)
           qty_article += 1
@@ -286,16 +322,42 @@ def main(nome_arquivo,d1,ds):
             break
   print('Quantidade: ' + str(qty_article))
 
+def create_agents(d1,agents):
+    agents["ag-ufrj"] = d1.agent("ufrj:UFRJ", {"prov:type":"prov:Organization", "foaf:name":"Universidade Federal do Rio de Janeiro"})
+    agents["ag-ppgi"] = d1.agent("ufrj:PPGI", {"prov:type":"prov:Organization", "foaf:name":"Programa de Pós Graduação em Informática"})
+    agents["ag-ppgi"].actedOnBehalfOf(agents["ag-ufrj"])
+    agents["ag-mai712"] = d1.agent("ufrj:MAI712", {"prov:type":"prov:Organization", "foaf:name":"Disciplina de Fundamentos de Ciências de Dados"})
+    agents["ag-mai712"].actedOnBehalfOf(agents["ag-ppgi"])
+    agents["ag-grupo6"] = d1.agent("ufrj:GRUPO6", {"prov:type":"prov:Organization", "foaf:name":"Grupo 06 para o trabalho final"})
+    agents["ag-grupo6"].actedOnBehalfOf(agents["ag-mai712"])
+    agents["ag-aluno-ingrid"] = d1.agent("ufrj:Ingrid", {"prov:type":"foaf:Person", "foaf:name":"Ingrid Quintanilha Pacheco", "foaf:mbox":"ingrid.pacheco@dcc.ufrj.br"})
+    agents["ag-aluno-ingrid"].actedOnBehalfOf(agents["ag-grupo6"])
+    agents["ag-aluno-eduardo"] = d1.agent("ufrj:Eduardo", {"prov:type":"foaf:Person", "foaf:name":"Eduardo Prata", "foaf:mbox":"edu.prata@gmail.com"})
+    agents["ag-aluno-eduardo"].actedOnBehalfOf(agents["ag-grupo6"])
+    agents["ag-gad-ipynb"] = d1.agent("ufrj:getArticleData.ipynb", {"prov:type":"prov:SoftwareAgent", "foaf:name":"getArticleData.ipynb", "prov:label":"Notebook Python utilizado no trabalho"})
+    agents["ag-gad-ipynb"].actedOnBehalfOf(agents["ag-grupo6"])
+
 if __name__ == "__main__":
-  d1 = ProvDocument()
   d1.add_namespace('cornel', 'https://www.cs.cornell.edu/andru/')
   d1.add_namespace('dblp', 'https://dblp.org/')
   d1.add_namespace('ufrj', 'https://www.ufrj.br')
-  ds = d1.entity('cornel:csconf.html')
-  today = date.today()
+  d1.add_namespace('foaf', 'http://xmlns.com/foaf/0.1/')
+  create_agents(d1,dagnts)
+  today = datetime.date.today()
   nome_arquivo = 'articles-' + str(today) + '.csv'
-  main(nome_arquivo,d1,ds)
+  dentities['et-conferencias'] = d1.entity('cornel:csconf.html', {'prov:label': 'Lista de melhores conferências de Ciência da Computação', 'prov:type': 'foaf:Document'})
+  dentities['et-top10'] = d1.entity('cornel:top10', {'prov:label': 'Lista das 10 melhores conferências de Ciência da Computação', 'prov:type': 'foaf:Document'})
+  dentities['et-dataset'] = d1.entity(f'ufrj:{nome_arquivo}', {'prov:label': 'CSV de dataset com os dados dos artigos', 'prov:type': 'foaf:Document'})
+  d1.wasDerivedFrom(dentities['et-top10'], dentities['et-conferencias'])
+  start_time = datetime.datetime.now()
+  main(nome_arquivo, d1, dagnts, dentities, dactivities)
+  end_time = datetime.datetime.now()
+  dactivities["at-criar-dataset"] = d1.activity("ufrj:criar-dataset", start_time, end_time)
+  d1.used(dactivities["at-criar-dataset"], dentities['et-top10'])
+  d1.wasGeneratedBy(dentities['et-dataset'], dactivities["at-criar-dataset"])
+  d1.wasAssociatedWith(dactivities["at-criar-dataset"], dagnts["ag-grupo6"])
+
   print(d1.get_provn())
   dot = prov_to_dot(d1)
-  dot.write_png('./article-prov1.png')
-  Image('./article-prov1.png')
+  dot.write_png('./getArticleData-prov.png')
+  Image('./getArticleData-prov.png')

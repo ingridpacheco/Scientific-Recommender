@@ -97,8 +97,11 @@ def get_properties(retorno):
 
   return article_data
 
-def find_article(title):
+def find_article(qty_article, title):
   print('Não tem DOI')
+  if qty_article % 99 == 0 and qty_article != 0:
+    print("Atingiu +99")
+    time.sleep(300)
   articles = sch.search_paper(title)
   if len(articles) > 0:
     print(articles[0])
@@ -269,7 +272,7 @@ def main(nome_arquivo,d1,dagnts,dentities,dactivities):
           doi = ''
           article_data = []
           if 'https://doi.org/' not in doi_url:
-            article_data = find_article(title)
+            article_data = find_article(qty_article, title)
             if article_data is None or article_data[0] == '':
               print('paperId is None')
               authors = ''

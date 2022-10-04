@@ -53,7 +53,7 @@ def get_properties(retorno):
   else:
     paperId = ''
   
-  if 'DOI' in retorno['externalIds'].keys():
+  if 'externalIds' in keys and 'DOI' in retorno['externalIds'].keys():
     doi = retorno['externalIds']['DOI']
   else:
     doi = ''

@@ -48,23 +48,79 @@ As conferências, portanto, escolhidas foram:
 As bibliotecas utilizadas no código de geração do dataset são:
 
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
-* [semanticscholar](https://pypi.org/project/semanticscholar/)
+* [prov](https://pypi.org/project/prov/)
+* [semanticScholar - versão 0.3.0](https://pypi.org/project/semanticscholar/)
+* [requests](https://pypi.org/project/requests/)
+* [IPython](https://ipython.org/install.html)
 
 ### Funcionamento
 
-O código funciona através de um Web Scraping no site do [DBLP](https://dblp.org/), que consulta a listagem de artigos publicados nas conferências mencionadas entre os anos de 2018 e 2022. A partir dos dados coletados, e com as informações complementadas pela api do Semantic Scholar e o site da [DL ACM](https://dl.acm.org/), o dataset é gerado e salvo num arquivo [CSV](/Dataset/articles-2022-09-19.csv).
+O código funciona através de um Web Scraping no site do [DBLP](https://dblp.org/), que consulta a listagem de artigos publicados nas conferências mencionadas acima entre os anos de 2018 e 2022. A partir dos dados coletados, e com as informações complementadas pela api do Semantic Scholar e o site da [DL ACM](https://dl.acm.org/), o dataset é gerado e salvo num arquivo [CSV](/Dataset/articles-2022-09-19.csv).
 
 ### Como rodar
 
 1. Instale as dependências Python que o código possui
 2. > python3 getArticleData.py
 
+### Notebook
+
+Também está disponibilizado o [Notebook](/Notebooks/getArticleData.ipynb) do código para reprodução do mesmo.
+
+## Análise do Dataset
+
+Para realizar as análises sobre o dataset de publicações gerado, foi criado um [script](/articleAnalysis.py) que analisa as conferências e tópicos e seus históricos, a fim de responder 9 perguntas:
+
+* Quais são os 6 tópicos mais publicados nos eventos?
+* Quais são os 6 tópicos mais publicados por ano (de 2018 a 2022) nestes eventos?
+* Para cada tópico, quais as conferências que mais os publicam?
+* Como foram as evoluções para cada tópico das conferências ao longo dos anos?
+* Para cada tópico, em que categoria as conferências entram em relação a publicação dos mesmos?
+* Quais as conferências que mais publicaram?
+* Como foram as evoluções ao longo dos anos para as conferências?
+* Para cada conferência, qual o tópico que mais aparece?
+* Como foram as evoluções dos tópicos publicados por cada conferência ao longo dos anos?
+
+### Análises
+
+As análises realizadas se mantém nas perguntas mencionadas acima, e para isso se utilizam de estruturas de dicionário criadas para auxiliar o processo. Além disso, também é realizado o processo de clusterização para entender como as conferências se comportam em termos de publicação para cada um dos tópicos.
+
+### Bibliotecas
+
+As bibliotecas utilizadas no código de análise do dataset são:
+
+* [pandas](https://pandas.pydata.org/)
+* [numpy](https://numpy.org/)
+* [matplotlib](https://matplotlib.org/)
+* [sklearn](https://scikit-learn.org/)
+* [bokeh - versão 2.4.3](http://bokeh.org/)
+* [plotly.express](https://pypi.org/project/plotly-express/)
+* [seaborn](https://seaborn.pydata.org/)
+* [prov](https://pypi.org/project/prov/)
+* [IPython](https://ipython.org/install.html)
+
+### Como rodar
+
+1. Instale as dependências Python que o código possui
+2. > python3 articleAnalysis.py
+
+### Notebook
+
+Também está disponibilizado o [Notebook](/Notebooks/articleAnalysis.ipynb) do código para reprodução do mesmo.
+
+### Resultado
+
+Todas as imagens geradas das análises executadas estão na pasta [Imagens](/Imagens/).
+
 ## Artigo
 
-O artigo pode se encontrar de forma [`online`](https://www.overleaf.com/8891746977wpkbvdfbzjdn) ou na pasta [Artigo](/Artigo/Scientific_Recommender.pdf).
+O artigo se encontra na pasta [Artigo](/Artigo/Scientific_Recommender.pdf).
+
+## Proveniência
+
+Com o auxília da biblioteca `prov` foi possível gerar a proveniência de ambos os códigos ([geração de dataset](/getArticleData.py) e [análise do mesmo](/articleAnalysis.py)). Todas as imagens geradas da proveniência se encontram na pasta [Proveniencia](/Proveniencia/).
 
 ## Cite As
 
-Ingrid Pacheco, Eduardo Prata & Renan Parreira. (2022, September 27). ingridpacheco/Scientific-Recommender: Repository of Scientific Recommender. 
+Ingrid Pacheco & Eduardo Prata (2022, September 27). ingridpacheco/Scientific-Recommender: Repository of Scientific Recommender. 
 
-**Scientific Recommender @ copyright, Ingrid Pacheco, Eduardo Prata e Renan Parreira, 2022**
+**Scientific Recommender @ copyright, Ingrid Pacheco e Eduardo Prata, 2022**

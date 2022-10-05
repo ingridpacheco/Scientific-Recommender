@@ -1,4 +1,4 @@
-# Scientific Recommender
+# Scientific Recommender [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7145542.svg)](https://doi.org/10.5281/zenodo.7145542)
 
 **Este projeto está licenciado nos termos da licença MIT.**
 
@@ -121,6 +121,6 @@ Com o auxília da biblioteca `prov` foi possível gerar a proveniência de ambos
 
 ## Cite As
 
-Ingrid Pacheco & Eduardo Prata (2022, September 27). ingridpacheco/Scientific-Recommender: Repository of Scientific Recommender. 
+Ingrid Pacheco, & Eduardo Prata. (2022). ingridpacheco/Scientific-Recommender: v1.0 (1.0). Zenodo. https://doi.org/10.5281/zenodo.7145542
 
 **Scientific Recommender @ copyright, Ingrid Pacheco e Eduardo Prata, 2022**

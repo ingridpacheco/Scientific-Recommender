@@ -21,6 +21,11 @@ O projeto é composto por:
 * [Artigo](/Artigo/Scientific_Recommender.pdf)
 * [Dataset gerado](/Dataset/articles-2022-09-19.csv)
 * [Imagens geradas](/Imagens/)
+* [Notebooks](/Notebooks/)
+* [Proveniências geradas](/Proveniencia/)
+* [Apresentação](/Apresentacao/)
+* [Licença](/LICENSE)
+* [README do projeto](/README.md)
 
 ## Geração do Dataset
 
@@ -65,6 +70,10 @@ O código funciona através de um Web Scraping no site do [DBLP](https://dblp.or
 ### Notebook
 
 Também está disponibilizado o [Notebook](/Notebooks/getArticleData.ipynb) do código para reprodução do mesmo.
+
+### Dataset disponibilizado
+
+O dataset está disponibilizado tanto no [Kaggle](https://www.kaggle.com/datasets/ingridpacheco/published-articles?select=articles-2022-09-19.csv) quanto no [Google Drive](https://drive.google.com/uc?id=1kWTbqT4QXZ2cVIP5dIHbgVI6ipRc3ba1&authuser=0&export=download), inclusive utilizado no código de análise do Dataset para reprodução do resultado.
 
 ## Análise do Dataset
 

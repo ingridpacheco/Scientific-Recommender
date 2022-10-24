@@ -6,7 +6,7 @@ Projeto final da disciplina de Fundamentos de Ciência de Dados do mestrado do P
 
 **Autores**: Ingrid Pacheco, Eduardo Prata e Renan Parreira
 
-**Professore**: Sérgio Serra e Jorge Zavatela
+**Professores**: Sérgio Serra e Jorge Zavatela
 
 ## Objetivo
 
